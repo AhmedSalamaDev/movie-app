@@ -1,4 +1,9 @@
 {
+<<<<<<< HEAD
+  "dependencies": {
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.2"
+=======
   "name": "movie-app",
   "private": true,
   "version": "0.0.0",
@@ -23,5 +28,6 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "vite": "^8.2.0"
+>>>>>>> c350923be12f10a32a4fb1f566445abefff54efa
   }
 }
