@@ -1,234 +1,217 @@
-import { useState, useEffect } from 'react';
-import {
-  getMovieDetails,
-  getMovieRecommendations,
-  getMovieReviews,
-} from '../services/tmdbService';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
+import { MovieCard } from '../components/MovieCard';
+import { getMovieDetails, getMovieRecommendations } from '../services/tmdbService';
 import './MovieDetails.css';
 
-function MovieDetails() {
-  // State variables for movie data, recommendations, reviews, and network state
+export const MovieDetails = () => {
+  const { id } = useParams();
+  const movieId = id || 550; // Fallback to Fight Club if no param
+
   const [movie, setMovie] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // TODO: Replace with useParams().id when routing is ready
-  const movieId = 550;
+  const { toggleWatchlist, isFavorite } = useApp();
+  const fav = movie && isFavorite ? isFavorite(movie.id) : false;
+  const fallbackPoster = 'https://placehold.co/500x750/f3f4f6/9ca3af?text=No+Poster';
 
   useEffect(() => {
-    const fetchMovieData = async () => {
+    const fetchDetails = async () => {
       setLoading(true);
       setError(null);
-
       try {
-        // Fetch movie details, recommendations, and reviews concurrently
-        const [movieData, recommendationsData, reviewsData] = await Promise.all([
+        const [movieData, recsData] = await Promise.all([
           getMovieDetails(movieId),
-          getMovieRecommendations(movieId),
-          getMovieReviews(movieId),
+          getMovieRecommendations(movieId).catch(() => ({ results: [] })),
         ]);
-
         setMovie(movieData);
-        setRecommendations(recommendationsData.results || []);
-        setReviews(reviewsData.results || []);
+        setRecommendations(recsData.results || []);
       } catch (err) {
-        setError(err.message || 'Failed to fetch movie data');
+        setError(err.message || 'Failed to load movie details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMovieData();
+    fetchDetails();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [movieId]);
 
-  // A. Loading State
+  const renderStars = (voteAverage) => {
+    const ratingOutOfFive = voteAverage ? Math.round(voteAverage / 2) : 4;
+    return '★'.repeat(ratingOutOfFive) + '☆'.repeat(5 - ratingOutOfFive);
+  };
+
   if (loading) {
     return (
-      <div className="movie-details-status">
-        <div className="spinner"></div>
-        <p>Loading movie details...</p>
+      <div className="container" style={{ textAlign: 'center', padding: '80px 0', color: '#6b7280' }}>
+        <p>Loading movie details from TMDB...</p>
       </div>
     );
   }
 
-  // B. Error State
-  if (error) {
+  if (error || !movie) {
     return (
-      <div className="movie-details-status error">
-        <h2>Something went wrong</h2>
-        <p>{error}</p>
+      <div className="container" style={{ textAlign: 'center', padding: '80px 0', color: '#ef4444' }}>
+        <h2>Error Loading Movie</h2>
+        <p>{error || 'Movie not found.'}</p>
+        <Link
+          to="/"
+          style={{
+            display: 'inline-block',
+            marginTop: '20px',
+            backgroundColor: '#fee135',
+            color: '#000',
+            fontWeight: '600',
+            padding: '10px 24px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+          }}
+        >
+          Back to home
+        </Link>
       </div>
     );
   }
 
-  // Fallback if movie data is not available
-  if (!movie) {
-    return null;
-  }
+  const posterSrc = movie.poster_path
+    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+    : (movie.poster || fallbackPoster);
 
-  const posterUrl = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}`
-    : 'https://placehold.co/500x750?text=No+Poster';
+  const languages = movie.spoken_languages && movie.spoken_languages.length > 0
+    ? movie.spoken_languages.map((lang) => lang.english_name || lang.name).join(', ')
+    : 'English';
+
+  const voteCount = movie.vote_count || 9288;
 
   return (
-    <div className="movie-details-container">
-      {/* C. Movie Hero Section */}
-      <div className="movie-hero">
-        <div className="movie-poster-wrapper">
+    <div className="container">
+      {/* Movie Details Hero matching Figma Image 5 */}
+      <div className="movie-details-hero">
+        <div className="movie-details-poster-wrap">
           <img
-            src={posterUrl}
-            alt={movie.title || 'Movie Poster'}
-            className="movie-poster"
+            src={posterSrc}
+            alt={movie.title}
+            className="movie-details-poster"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = fallbackPoster;
+            }}
           />
         </div>
 
-        <div className="movie-info">
-          <div className="movie-header">
-            <h1 className="movie-title">{movie.title}</h1>
-            {/* Heart / Favorite Button (UI only static placeholder) */}
+        <div className="movie-details-info">
+          <div className="movie-details-header">
+            <h1 className="movie-details-title">{movie.title}</h1>
             <button
-              className="watchlist-btn"
-              title="Add to Watchlist"
-              aria-label="Add to Watchlist"
+              type="button"
+              className={`heart-toggle-btn ${fav ? 'active' : ''}`}
+              style={{ fontSize: '1.75rem' }}
+              onClick={() => toggleWatchlist(movie)}
+              aria-label={fav ? 'Remove from watchlist' : 'Add to watchlist'}
+              title={fav ? 'Remove from watchlist' : 'Add to watchlist'}
             >
-              <span className="heart-icon">♥</span> Add to Watchlist
+              {fav ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#FEE135">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              )}
             </button>
           </div>
 
-          <div className="movie-meta">
-            {movie.release_date && (
-              <span className="meta-item">
-                <strong>Release:</strong> {movie.release_date}
-              </span>
-            )}
-            {movie.runtime > 0 && (
-              <span className="meta-item">
-                <strong>Runtime:</strong> {movie.runtime} min
-              </span>
-            )}
-            {movie.vote_average !== undefined && (
-              <span className="meta-item rating-badge">
-                ★ {movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'} / 10
-              </span>
-            )}
-            {movie.vote_count !== undefined && (
-              <span className="meta-item vote-count">
-                ({movie.vote_count.toLocaleString()} votes)
-              </span>
-            )}
+          <span className="movie-details-date">{movie.release_date || 'Sep 25, 2017'}</span>
+
+          {/* Large Stars matching Figma */}
+          <div className="star-rating-row">
+            <span className="stars">{renderStars(movie.vote_average)}</span>
+            <span className="vote-number">{voteCount.toLocaleString()}</span>
           </div>
 
-          {/* Genres */}
+          <p className="movie-details-overview">
+            {movie.overview || 'No overview available for this movie.'}
+          </p>
+
+          {/* Genre Pills */}
           {movie.genres && movie.genres.length > 0 && (
-            <div className="movie-genres">
+            <div className="genre-pills">
               {movie.genres.map((genre) => (
-                <span key={genre.id} className="genre-badge">
+                <span key={genre.id} className="genre-pill">
                   {genre.name}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Spoken Languages */}
-          {movie.spoken_languages && movie.spoken_languages.length > 0 && (
-            <div className="movie-languages">
-              <strong>Languages:</strong>{' '}
-              {movie.spoken_languages
-                .map((lang) => lang.english_name || lang.name)
-                .join(', ')}
-            </div>
-          )}
+          {/* Meta: Duration and Languages */}
+          <div className="meta-row">
+            {movie.runtime > 0 && (
+              <span>
+                <strong>Duration:</strong> {movie.runtime} Min.
+              </span>
+            )}
+            <span>
+              <strong>Languages:</strong> {languages}
+            </span>
+          </div>
 
           {/* Production Companies */}
           {movie.production_companies && movie.production_companies.length > 0 && (
-            <div className="movie-production">
-              <strong>Production:</strong>{' '}
-              {movie.production_companies.map((company) => company.name).join(', ')}
+            <div className="production-logos">
+              {movie.production_companies.map((comp) =>
+                comp.logo_path ? (
+                  <img
+                    key={comp.id}
+                    src={`https://image.tmdb.org/t/p/w200${comp.logo_path}`}
+                    alt={comp.name}
+                    className="production-logo"
+                    title={comp.name}
+                  />
+                ) : (
+                  <span key={comp.id} className="production-text">
+                    {comp.name}
+                  </span>
+                )
+              )}
             </div>
           )}
 
-          {/* Website Link */}
+          {/* Official Website Button */}
           {movie.homepage && (
-            <div className="movie-homepage">
-              <strong>Official Website:</strong>{' '}
-              <a
-                href={movie.homepage}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="homepage-link"
-              >
-                Visit Website ↗
-              </a>
-            </div>
+            <a
+              href={movie.homepage}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="website-btn"
+            >
+              Website 🔗
+            </a>
           )}
-
-          {/* Overview */}
-          <div className="movie-overview-section">
-            <h3>Overview</h3>
-            <p className="movie-overview">
-              {movie.overview || 'No overview available for this movie.'}
-            </p>
-          </div>
         </div>
       </div>
 
-      {/* D. Recommendations Section */}
-      <section className="movie-section">
-        <h2 className="section-title">Recommendations</h2>
-        {recommendations.length === 0 ? (
-          <p className="empty-message">No recommendations available.</p>
-        ) : (
-          <div className="recommendations-grid">
-            {recommendations.map((item) => (
-              <div key={item.id} className="recommendation-card">
-                <img
-                  src={
-                    item.poster_path
-                      ? `https://image.tmdb.org/t/p/w500/${item.poster_path}`
-                      : 'https://placehold.co/500x750?text=No+Poster'
-                  }
-                  alt={item.title || 'Recommended Movie'}
-                  className="recommendation-image"
-                />
-                <div className="recommendation-details">
-                  <h4 className="recommendation-name">{item.title}</h4>
-                  <span className="recommendation-rating">
-                    ★ {item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Break / Divider between Details Hero and Recommendations */}
+      <hr className="details-divider" />
 
-      {/* E. Reviews Section */}
-      <section className="movie-section">
-        <h2 className="section-title">Reviews</h2>
-        {reviews.length === 0 ? (
-          <p className="empty-message">No reviews available yet.</p>
-        ) : (
-          <div className="reviews-list">
-            {reviews.map((review) => (
-              <div key={review.id} className="review-card">
-                <div className="review-header">
-                  <span className="review-author">{review.author}</span>
-                  {review.created_at && (
-                    <span className="review-date">
-                      {new Date(review.created_at).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-                <p className="review-content">{review.content}</p>
-              </div>
+      {/* Recommendations Section */}
+      {recommendations.length > 0 && (
+        <section>
+          <h2 className="section-title">Recommendations</h2>
+          <div className="movies-grid">
+            {recommendations.slice(0, 6).map((rec) => (
+              <MovieCard key={rec.id} movie={rec} />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
-}
+};
 
 export default MovieDetails;
