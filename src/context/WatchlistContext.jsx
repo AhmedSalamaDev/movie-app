@@ -30,9 +30,10 @@ export function WatchlistProvider({ children }) {
     <WatchlistContext.Provider
       value={{
         watchlist,
+        setWatchlist,
         toggleWatchlist,
         isInWatchlist,
-        count: watchlist.length
+        count: watchlist.length,
       }}
     >
       {children}

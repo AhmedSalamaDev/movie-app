@@ -1,21 +1,30 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WatchlistProvider } from './context/WatchlistContext';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
 import WatchlistPage from './pages/WatchlistPage';
+import { AppProvider } from './context/AppContext';
+import { Header } from './components/Header';
+import { HomePage } from './pages/HomePage';
+import { SearchResultsPage } from './pages/SearchResultspage';
+import { MovieDetails } from './pages/MovieDetails';
+import './App.css';
 
-function App() {
+const App = () => {
   return (
     <WatchlistProvider>
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/watchlist" element={<WatchlistPage />} />
-        </Routes>
-      </Router>
+      <AppProvider>
+        <Router>
+          <Header />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchResultsPage />} />
+            <Route path="/movie/:id" element={<MovieDetails />} />
+            <Route path="/watchlist" element={<WatchlistPage />} />
+            <Route path="*" element={<HomePage />} />
+          </Routes>
+        </Router>
+      </AppProvider>
     </WatchlistProvider>
   );
-}
+};
 
 export default App;
