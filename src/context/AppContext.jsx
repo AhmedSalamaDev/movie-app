@@ -1,24 +1,15 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useWatchlist } from './WatchlistContext';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [watchlist, setWatchlist] = useState([]);
+  const { watchlist, setWatchlist, toggleWatchlist, isInWatchlist } =
+    useWatchlist();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const toggleWatchlist = (movie) => {
-    if (!movie) return;
-    setWatchlist((prev) => {
-      const exists = prev.some((item) => item.id === movie.id);
-      if (exists) {
-        return prev.filter((item) => item.id !== movie.id);
-      }
-      return [...prev, movie];
-    });
-  };
-
   const isFavorite = (movieId) => {
-    return watchlist.some((item) => item.id === movieId);
+    return isInWatchlist ? isInWatchlist(movieId) : false;
   };
 
   return (
