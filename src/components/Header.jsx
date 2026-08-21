@@ -12,12 +12,17 @@ export const Header = () => {
         <Link to="/">Movie App</Link>
       </div>
       <div className="header-right">
-        <div className="lang-select-wrapper">
-          <select className="lang-select" aria-label="Select Language">
-            <option value="en">En</option>
-            <option value="ar">Ar</option>
-          </select>
-        </div>
+        <Link
+          to="/assistant"
+          className="assistant-link"
+          aria-label="Open Movie Assistant"
+        >
+          <img
+            src="/bot.png"
+            alt="Movie assistant"
+            className="assistant-header-icon"
+          />
+        </Link>
         <Link to="/watchlist" className="watchlist-link">
           <svg
             className="watchlist-header-heart"
