@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
 import { SearchResultsPage } from './pages/SearchResultspage';
 import { MovieDetails } from './pages/MovieDetails';
+import ChatbotPage from './pages/ChatbotPage';
 import './App.css';
 
 const App = () => {
@@ -19,6 +20,7 @@ const App = () => {
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/movie/:id" element={<MovieDetails />} />
             <Route path="/watchlist" element={<WatchlistPage />} />
+            <Route path="/assistant" element={<ChatbotPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </Router>
