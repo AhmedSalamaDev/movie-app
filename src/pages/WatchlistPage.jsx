@@ -2,6 +2,7 @@ import { useWatchlist } from '../context/WatchlistContext';
 import { MovieCard } from '../components/MovieCard';
 import { Link } from 'react-router-dom';
 import { FaHeartBroken } from 'react-icons/fa';
+import './WatchlistPage.css';
 
 function WatchlistPage() {
   const { watchlist } = useWatchlist();
@@ -55,9 +56,14 @@ function WatchlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="movies-grid">
+        <div className="watchlist-grid">
           {watchlist.map((item) => (
-            <MovieCard key={item.id} movie={item} mediaType={item.media_type} />
+            <MovieCard 
+              key={item.id} 
+              movie={item} 
+              mediaType={item.media_type} 
+              isHorizontal={true} 
+            />
           ))}
         </div>
       )}
